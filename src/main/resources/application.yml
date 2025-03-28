@@ -1,0 +1,14 @@
+spring:
+  application:
+    name: tiebreaker
+  thymeleaf:
+      prefix: classpath:/templates/
+      suffix: .html
+
+server:
+  port: 8080
+
+euroleague:
+  api:
+    url: https://api-live.euroleague.net
+    season-code: E2024

@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Euroleague Tiebreaker</title>
+    <link rel="icon" href="/images/logo.png" type="image/x-icon" />
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-V166S1G385"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+
+        gtag('config', 'G-V166S1G385');
+    </script>
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+            background-color: #000;
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+        }
+        .header {
+            background-color: #ff6600;
+            padding: 20px;
+            text-align: center;
+            border-bottom: 10px solid #222;
+            border-bottom-left-radius: 20px;
+            border-bottom-right-radius: 20px;
+        }
+        .container {
+            width: 90%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            max-width: 100%;
+            margin: auto;
+            flex: 1;
+            text-align: center; /* Center content */
+        }
+        .btn {
+            background-color: #ff6600;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            font-size: 16px;
+            border-radius: 5px;
+            width: 100%;
+            max-width: 200px;
+            display: block;
+            margin: 10px auto;
+            text-align: center;
+        }
+        .btn:hover {
+            background-color: #e65c00;
+        }
+        .teams-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .team-button {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            background-color: #222;
+            color: #fff;
+            border: 2px solid #ff6600;
+            padding: 10px 15px;
+            cursor: pointer;
+            font-size: 15px;
+            border-radius: 5px;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        .team-button:hover, .team-button.selected {
+            background-color: #ff6600;
+            color: #000;
+        }
+        .rankings-container, .missing-games-container {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            overflow-x: auto;
+            box-sizing: border-box;
+        }
+        .rankings-table, .missing-games-table {
+            width: 100%;
+            border-collapse: separate;
+            margin-top: 20px;
+            border-spacing: 0;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .rankings-table th, .rankings-table td,
+        .missing-games-table th, .missing-games-table td {
+            border: 1px solid #fff;
+            padding: 10px;
+            text-align: center;
+            white-space: nowrap;
+        }
+        .rankings-table th, .missing-games-table th {
+            background-color: #ff6600;
+            color: #000;
+        }
+        .rankings-table td, .missing-games-table td {
+            vertical-align: middle; /* Center vertically */
+            text-align: center; /* Center horizontally */
+        }
+        .rankings-table td img, .missing-games-table td img {
+            margin-right: 10px;
+            vertical-align: middle; /* Center vertically with text */
+        }
+        .rankings-table th:first-child, .missing-games-table th:first-child {
+            border-top-left-radius: 10px;
+        }
+        .rankings-table th:last-child, .missing-games-table th:last-child {
+            border-top-right-radius: 10px;
+        }
+        .rankings-table tr:last-child td:first-child,
+        .missing-games-table tr:last-child td:first-child {
+            border-bottom-left-radius: 10px;
+        }
+        .rankings-table tr:last-child td:last-child,
+        .missing-games-table tr:last-child td:last-child {
+            border-bottom-right-radius: 10px;
+        }
+        tr:nth-child(even) {
+            background-color: #222;
+            color: white;
+        }
+        .missing-games-table input[type="number"] {
+            border: 2px solid #ff6600;
+            border-radius: 10px; /* Make the input fields rounder */
+            padding: 5px;
+            width: 60px;
+            text-align: center;
+            background-color: #222;
+            color: #fff;
+            font-size: 14px;
+            transition: border-color 0.3s, background-color 0.3s;
+        }
+        .missing-games-table input[type="number"]:focus {
+            border-color: #e65c00;
+            background-color: #333;
+            outline: none;
+        }
+        .footer {
+            background-color: #222;
+            padding: 10px;
+            text-align: center;
+            margin-top: 20px;
+            border-top-left-radius: 20px;
+            border-top-right-radius: 20px;
+        }
+        .loading-spinner {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 20px;
+        }
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #ff6600;
+            border-top: 4px solid #fff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        @media screen and (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            .rankings-table, .missing-games-table {
+                font-size: 14px;
+                display: block;
+                overflow-x: auto;
+            }
+            .btn {
+                width: 100%;
+                padding: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+<header class="header">
+    <h1>Euroleague 24/25 Head-To-Head Team Rankings</h1>
+</header>
+<div class="container">
+    <p>Select teams and see their head-to-head rankings</p>
+    <form th:action="@{/api/rankings}" method="get">
+        <div id="teamsContainer" class="teams-container"></div>
+    </form>
+    <div id="loadingSpinner" class="loading-spinner" style="display: none;">
+        <div class="spinner"></div>
+    </div>
+    <div class="rankings-container" style="display: none;">
+            <table class="rankings-table">
+                <thead>
+                <tr>
+                    <th>Rank</th>
+                    <th>Team Name</th>
+                    <th>H2H Wins</th>
+                    <th>H2H Points Diff</th>
+                    <th>Total Points Diff</th>
+                    <th>Total Points Scored</th>
+                </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+            <p class="note">Note: The "Total Points Diff" and "Total Points Scored" will change as the season progresses.</p>
+    </div>
+    <div class="missing-games-container" style="display: none;">
+        <h2>Games that still need to be played</h2>
+        <form id="predictionForm">
+            <div class="missing-games-table-container">
+                <table class="missing-games-table">
+                    <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Home Team</th>
+                        <th>Away Team</th>
+                        <th>Home Score</th>
+                        <th>Away Score</th>
+                    </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+            <button type="submit" class="btn">Get Rankings with Prediction</button>
+        </form>
+    </div>
+</div>
+<footer class="footer">
+    <p>&copy; 2025 Euroleague Team H2H Rankings</p>
+</footer>
+
+
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    let missingGames = [];
+
+    function fetchTeams() {
+        fetch('/rankings/teams')
+            .then(response => response.json())
+            .then(data => {
+                const teamsContainer = document.getElementById('teamsContainer');
+                teamsContainer.innerHTML = '';
+
+                data.forEach(team => {
+                    const button = document.createElement('button');
+                    button.className = 'team-button';
+                    button.dataset.teamCode = team.code;
+
+                    const img = document.createElement('img');
+                    img.src = `/images/logos/${team.code.toLowerCase()}.png`;
+                    img.alt = `${team.displayName} logo`;
+                    img.style.width = '20px';
+                    img.style.height = '20px';
+                    img.style.marginRight = '10px';
+
+                    const span = document.createElement('span');
+                    span.textContent = team.displayName;
+
+                    button.appendChild(img);
+                    button.appendChild(span);
+
+                    button.addEventListener('click', function () {
+                        button.classList.toggle('selected');
+                        if (button.classList.contains('selected')) {
+                            button.style.backgroundColor = '#ff6600';
+                            button.style.color = '#000';
+                        } else {
+                            button.style.backgroundColor = '#222';
+                            button.style.color = '#fff';
+                        }
+                });
+
+                teamsContainer.appendChild(button);
+                });
+            });
+    }
+
+    function fetchRankings(event) {
+    event.preventDefault();
+
+    // Show the loading spinner
+    document.getElementById('loadingSpinner').style.display = 'block';
+
+    const form = event.target;
+    const formData = new FormData(form);
+    const selectedTeamsCodes = Array.from(document.querySelectorAll('.team-button.selected')).map(button => button.dataset.teamCode);
+    const params = new URLSearchParams(formData);
+    selectedTeamsCodes.forEach(code => params.append('teams', code));
+
+    if (selectedTeamsCodes.length === 0) {
+        document.querySelector('.rankings-container tbody').innerHTML = '';
+        document.querySelector('.rankings-container').style.display = 'none';
+        document.getElementById('loadingSpinner').style.display = 'none';
+        return; // Exit the function early
+    }
+
+    fetch('/rankings?' + params.toString())
+        .then(response => {
+            if (response.status === 400) {
+                return response.json().then(data => {
+                    displayMissingGames(data);
+                    document.querySelector('.rankings-container').style.display = 'none';
+                    document.querySelector('.missing-games-container').style.display = 'block';
+                });
+            } else {
+                return response.json().then(data => {
+                    displayRankings(data);
+                    document.querySelector('.rankings-container').style.display = 'block';
+                    document.querySelector('.missing-games-container').style.display = 'none';
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching rankings:', error);
+        })
+        .finally(() => {
+            document.getElementById('loadingSpinner').style.display = 'none';
+        });
+    }
+
+    function displayRankings(rankings) {
+        const rankingsContainer = document.querySelector('.rankings-container tbody');
+        if (!rankingsContainer) {
+            console.error('Rankings container not found');
+            return;
+        }
+        rankingsContainer.innerHTML = '';
+        rankings.forEach((ranking, index) => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${index + 1}</td>
+                <td>
+                <img src="/images/logos/${ranking.teamCode.toLowerCase()}.png" style="width: 20px; height: 20px; margin-right: 10px;">
+                ${ranking.teamName}
+                </td>
+                <td>${ranking.headToHeadWins}</td>
+                <td>${ranking.headToHeadPointsDifference}</td>
+                <td>${ranking.totalPointsDifference}</td>
+                <td>${ranking.totalPointsScored}</td>
+            `;
+            rankingsContainer.appendChild(row);
+        });
+    }
+
+    function displayMissingGames(games) {
+        missingGames = games; // Assign the games to the global variable
+        const missingGamesContainer = document.querySelector('.missing-games-container');
+        if (!missingGamesContainer) {
+            console.error('Missing games container not found');
+            return;
+        }
+
+        const tbody = missingGamesContainer.querySelector('tbody');
+        if (!tbody) {
+            console.error('Missing games tbody not found');
+            return;
+        }
+
+        tbody.innerHTML = ''; // Clear previous content
+
+        if (missingGames.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="5">No missing games.</td></tr>`;
+            return;
+        }
+
+        missingGames.forEach((game, index) => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${index + 1}</td>
+                <td>
+                    <img src="/images/logos/${game.homeTeam.code.toLowerCase()}.png" style="width: 20px; height: 20px; margin-right: 10px;">
+                    ${game.homeTeam ? game.homeTeam.displayName : 'Unknown'}
+                    <input type="hidden" name="homeTeamCode[${index}]" value="${game.homeTeam ? game.homeTeam.code : ''}">
+                    <input type="hidden" name="homeTeamName[${index}]" value="${game.homeTeam ? game.homeTeam.displayName : ''}">
+                </td>
+                <td>
+                    <img src="/images/logos/${game.awayTeam.code.toLowerCase()}.png" style="width: 20px; height: 20px; margin-right: 10px;">
+                    ${game.awayTeam ? game.awayTeam.displayName : 'Unknown'}
+                    <input type="hidden" name="awayTeamCode[${index}]" value="${game.awayTeam ? game.awayTeam.code : ''}">
+                    <input type="hidden" name="awayTeamName[${index}]" value="${game.awayTeam ? game.awayTeam.displayName : ''}">
+                </td>
+                <td><input type="number" name="homeScore[${index}]" class="home-score" required min="0" max="200"></td>
+                <td><input type="number" name="awayScore[${index}]" class="away-score" required min="0" max="200"></td>
+            `;
+            tbody.appendChild(row);
+        });
+
+        missingGamesContainer.style.display = 'block'; // Ensure visibility
+    }
+
+    document.getElementById('predictionForm').addEventListener('submit', function(event) {
+        event.preventDefault();
+
+        const form = event.target;
+        const formData = new FormData(form);
+        const selectedTeamsCodes = Array.from(document.querySelectorAll('.team-button.selected')).map(button => button.dataset.teamCode);
+        const predictedMatches = [];
+
+        let valid = true;
+        missingGames.forEach((game, index) => {
+            const homeScore = formData.get(`homeScore[${index}]`);
+            const awayScore = formData.get(`awayScore[${index}]`);
+
+            if (homeScore === null || awayScore === null || homeScore === "" || awayScore === "") {
+                valid = false;
+            } else {
+                const homePoints = parseInt(homeScore);
+                const awayPoints = parseInt(awayScore);
+
+                // Validation: ensure home and away scores are not the same and not negative
+                if (homePoints < 0 || awayPoints < 0 || homePoints === awayPoints) {
+                    valid = false;
+                    alert("Home and Away scores cannot be the same and cannot be negative.");
+                } else {
+                    predictedMatches.push({
+                        homeTeam: game.homeTeam,
+                        awayTeam: game.awayTeam,
+                        homePoints: homePoints,
+                        awayPoints: awayPoints
+                    });
+
+                }
+            }
+        });
+
+        if (!valid) {
+            return;
+        }
+
+        document.getElementById('loadingSpinner').style.display = 'block';
+
+        fetch('/rankings', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                teams: selectedTeamsCodes,
+                predictedMatches: predictedMatches
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            displayRankings(data);
+            document.querySelector('.rankings-container').style.display = 'block';
+            document.querySelector('.missing-games-container').style.display = 'none';
+        })
+        .finally(() => {
+            document.getElementById('loadingSpinner').style.display = 'none';
+        });
+    });
+
+    document.addEventListener('DOMContentLoaded', () => {
+        fetchTeams();
+        document.querySelector('form').addEventListener('submit', fetchRankings);
+    });
+    /*]]>*/
+</script>
+</body>
+</html>
