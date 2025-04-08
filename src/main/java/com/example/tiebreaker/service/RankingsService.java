@@ -95,11 +95,37 @@ public class RankingsService {
             }
         }
 
-        return teamStats.values().stream().sorted(Comparator.comparing(TeamScoreDTO::headToHeadWins).reversed()
+        var sortedTeams = new ArrayList<>(teamStats.values().stream().sorted(Comparator.comparing(TeamScoreDTO::headToHeadWins).reversed()
                         .thenComparing(Comparator.comparingInt(TeamScoreDTO::headToHeadPointsDifference).reversed())
                         .thenComparing(Comparator.comparingInt(TeamScoreDTO::totalPointsDifference).reversed())
                         .thenComparing(Comparator.comparingInt(TeamScoreDTO::totalPointsScored).reversed()))
-                .toList();
+                .toList());
+
+        var recalculatedTeams = new ArrayList<TeamScoreDTO>();
+        var i = 0;
+        while (i < sortedTeams.size()) {
+            var sameWinsTeams = new ArrayList<TeamScoreDTO>();
+            var currentWins = sortedTeams.get(i).headToHeadWins();
+            while (i < sortedTeams.size() && sortedTeams.get(i).headToHeadWins() == currentWins) {
+                sameWinsTeams.add(sortedTeams.get(i));
+                i++;
+            }
+            if (sameWinsTeams.size() > 1 && sameWinsTeams.size() != sortedTeams.size()) {
+                var sameWinsTeamCodes = sameWinsTeams.stream().map(TeamScoreDTO::teamCode).toList();
+                recalculatedTeams.addAll(getRankings(sameWinsTeamCodes, games, teamsData));
+            } else {
+                recalculatedTeams.addAll(sameWinsTeams);
+            }
+        }
+
+        Map<String, Integer> recalculatedOrder = new HashMap<>();
+        for (int j = 0; j < recalculatedTeams.size(); j++) {
+            recalculatedOrder.put(recalculatedTeams.get(j).teamCode(), j);
+        }
+
+        sortedTeams.sort(Comparator.comparingInt(team -> recalculatedOrder.get(team.teamCode())));
+
+        return sortedTeams;
     }
 
     private List<MatchDTO> findRemainingMatches(List<String> teamsToCompare) {
